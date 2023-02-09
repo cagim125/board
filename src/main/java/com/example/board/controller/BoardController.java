@@ -2,28 +2,39 @@ package com.example.board.controller;
 
 
 import com.example.board.entity.Board;
+import com.example.board.entity.User;
 import com.example.board.service.BoardService;
+import com.example.board.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Controller
 public class BoardController {
 
     @Autowired
     private BoardService boardService;
+    @Autowired
+    private UserService userService;
     @GetMapping("/board/write")
     public String boardWriteForm() {
         return "boardwrite";
     }
 
     @PostMapping("board/writepro")
-    public String boardWritePro(Board board, Model model) {
+    public String boardWritePro(Board board, Model model, MultipartFile file) throws Exception{
 
-        boardService.write(board);
+        boardService.write(board, file);
 
         model.addAttribute("message", "글 작성이 완료되었습니다.");
         model.addAttribute("searchUrl", "/board/list");
@@ -32,8 +43,21 @@ public class BoardController {
     }
 
     @GetMapping("/board/list")
-    public String boardList(Model model) {
-        model.addAttribute("list", boardService.boardList());
+    public String boardList(Model model, @PageableDefault(page=0, size =10, sort="id", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Board> list = boardService.boardList(pageable);
+//        List<User> userlist = userService.getUser();
+
+        int nowPage = list.getPageable().getPageNumber();
+        int startPage = Math.max(nowPage - 4, 1);
+        int endPage = Math.min(nowPage + 9, list.getTotalPages());
+
+
+//        model.addAttribute("user", userlist);
+        model.addAttribute("list", list);
+        model.addAttribute("nowPage", nowPage);
+        model.addAttribute("startPage", startPage);
+        model.addAttribute("endPage", endPage);
+
 
         return "boardlist";
     }
@@ -59,19 +83,20 @@ public class BoardController {
     }
 
     @PostMapping("/board/update/{id}")
-    public String boardUpdate(@PathVariable("id") Integer id, Board board){
+    public String boardUpdate(@PathVariable("id") Integer id, Board board, MultipartFile file) throws Exception{
 
         Board boardTemp = boardService.boardView(id);
         boardTemp.setTitle(board.getTitle());
         boardTemp.setContent(board.getContent());
 
-        boardService.write(boardTemp);
+        boardService.write(boardTemp, file);
 
         return "redirect:/board/list";
     }
 
-    @GetMapping("/hello")
-    public String hello() {
-        return "hello_world";
+    @GetMapping("")
+    public String index() {
+
+        return "index";
     }
 }

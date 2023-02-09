@@ -16,6 +16,8 @@ public class Board {
     private int id;
     private String title;
     private String content;
+    private String filename;
+    private String filepath;
 
 //    public int getId() {
 //        return id;
